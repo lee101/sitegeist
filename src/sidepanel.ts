@@ -23,6 +23,7 @@ import {
 } from "@mariozechner/pi-web-ui";
 import { html, render } from "lit";
 import { History, Plus, Settings } from "lucide";
+import { compactMessages } from "./context-compaction.js";
 import { AboutTab } from "./dialogs/AboutTab.js";
 import { ApiKeyOrOAuthDialog } from "./dialogs/ApiKeyOrOAuthDialog.js";
 import { ApiKeysOAuthTab } from "./dialogs/ApiKeysOAuthTab.js";
@@ -121,7 +122,7 @@ const DEFAULT_MODELS: Record<string, string> = {
 	minimax: "MiniMax-M2.1",
 	"minimax-cn": "MiniMax-M2.1",
 	mistral: "devstral-medium-latest",
-	openai: "gpt-4o-mini",
+	openai: "gpt-5.5",
 	"openai-codex": "gpt-5.1-codex-mini",
 	opencode: "claude-opus-4-6",
 	"opencode-go": "kimi-k2.5",
@@ -387,6 +388,20 @@ const createAgent = async (initialState?: Partial<AgentState>, shouldSave = true
 			tools: [],
 		},
 		convertToLlm: browserMessageTransformer,
+		transformContext: async (messages) => {
+			try {
+				const model = agent?.state.model;
+				if (!model?.contextWindow) return messages;
+				return compactMessages(messages, {
+					contextWindow: model.contextWindow,
+					maxTokens: model.maxTokens,
+					systemPrompt: agent.state.systemPrompt,
+				});
+			} catch (e) {
+				console.error("context compaction failed:", e);
+				return messages;
+			}
+		},
 		toolExecution: "sequential",
 		streamFn: createStreamFn(async () => {
 			const enabled = await storage.settings.get<boolean>("proxy.enabled");
