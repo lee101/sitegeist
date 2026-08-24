@@ -1,6 +1,11 @@
 {
 	"extends": "./tsconfig.build.json",
 	"compilerOptions": {
-		"noEmit": true
+		"noEmit": true,
+		"paths": {
+			"@mariozechner/pi-ai": ["../pi-mono/packages/ai/dist/index.d.ts"],
+			"@mariozechner/pi-agent-core": ["../pi-mono/packages/agent/dist/index.d.ts"],
+			"@mariozechner/pi-tui": ["../pi-mono/packages/tui/dist/index.d.ts"]
+		}
 	}
 }

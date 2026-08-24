@@ -1,10 +1,10 @@
 import { Button } from "@mariozechner/mini-lit/dist/Button.js";
 import { icon } from "@mariozechner/mini-lit/dist/icons.js";
 import { Switch } from "@mariozechner/mini-lit/dist/Switch.js";
-import { getModel } from "@mariozechner/pi-ai";
 import { setAppStorage } from "@mariozechner/pi-web-ui";
 import { html, render } from "lit";
 import { ArrowLeft, Bug, MousePointer2, Play, Sparkles } from "lucide";
+import { getModel } from "./pi-models.js";
 import "./debug/ReplPanel.js";
 import { SitegeistAppStorage } from "./storage/app-storage.js";
 import { askUserWhichElementTool } from "./tools/ask-user-which-element.js";
@@ -15,11 +15,11 @@ interface TestPrompt {
 }
 
 const models = [
-	getModel("anthropic", "claude-sonnet-4-5-20250929"),
-	getModel("openai", "gpt-5-codex"),
+	getModel("anthropic", "claude-sonnet-4-6"),
+	getModel("openai", "gpt-5.6-luna"),
 	getModel("google", "gemini-2.5-pro"),
-	getModel("openrouter", "z-ai/glm-4.6"),
-];
+	getModel("openrouter", "stealth/ox-alpha"),
+].filter((model) => model !== undefined);
 
 // Initialize AppStorage so tools relying on Sitegeist storage can operate in debug page
 const storage = new SitegeistAppStorage();

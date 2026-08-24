@@ -19,7 +19,8 @@
 		"@mariozechner/mini-lit": "file:../mini-lit",
 		"@mariozechner/pi-agent-core": "file:../pi-mono/packages/agent",
 		"@mariozechner/pi-ai": "file:../pi-mono/packages/ai",
-		"@mariozechner/pi-web-ui": "file:../pi-mono/packages/web-ui",
+		"@mariozechner/pi-web-ui": "^0.73.1",
+		"@opentelemetry/api": "^1.9.1",
 		"@sinclair/typebox": "^0.34.41",
 		"chart.js": "^4.5.1",
 		"docx-preview": "^0.3.7",
@@ -34,16 +35,23 @@
 		"pdfjs-dist": "5.4.394",
 		"three": "^0.180.0",
 		"tsx": "^4.20.6",
+		"typebox": "^1.3.7",
 		"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.5",
 		"@tailwindcss/cli": "^4.0.0-beta.14",
 		"@types/chrome": "^0.1.24",
+		"@types/three": "^0.185.4",
 		"@types/webextension-polyfill": "^0.12.4",
 		"concurrently": "^9.2.1",
 		"esbuild": "^0.25.10",
-		"husky": "^9.1.7",
+		"typescript": "^5.9.3",
 		"ws": "^8.18.0"
+	},
+	"overrides": {
+		"@mariozechner/pi-ai": "file:../pi-mono/packages/ai",
+		"@mariozechner/pi-agent-core": "file:../pi-mono/packages/agent",
+		"@mariozechner/pi-tui": "file:../pi-mono/packages/tui"
 	}
 }

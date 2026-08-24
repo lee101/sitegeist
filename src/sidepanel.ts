@@ -9,7 +9,7 @@ import {
 	type AgentState,
 	type AgentTool,
 } from "@mariozechner/pi-agent-core";
-import { getModel, getModels, type Model } from "@mariozechner/pi-ai";
+import type { Model } from "@mariozechner/pi-ai";
 import {
 	ChatPanel,
 	createExtractDocumentTool,
@@ -24,6 +24,7 @@ import {
 import { html, render } from "lit";
 import { History, Plus, Settings } from "lucide";
 import { compactMessages } from "./context-compaction.js";
+import { getDefaultSecret } from "./default-secrets.js";
 import { AboutTab } from "./dialogs/AboutTab.js";
 import { ApiKeyOrOAuthDialog } from "./dialogs/ApiKeyOrOAuthDialog.js";
 import { ApiKeysOAuthTab } from "./dialogs/ApiKeysOAuthTab.js";
@@ -43,8 +44,10 @@ import {
 import { registerUserMessageRenderer } from "./messages/UserMessageRenderer.js";
 import { createWelcomeMessage, registerWelcomeRenderer } from "./messages/WelcomeMessage.js";
 import { isOAuthCredentials, resolveApiKey } from "./oauth/index.js";
+import { getModel, getModels } from "./pi-models.js";
 import { SYSTEM_PROMPT } from "./prompts/prompts.js";
 import { SitegeistAppStorage } from "./storage/app-storage.js";
+import { wrapToolDefinition } from "./tool-wrapper.js";
 import { DebuggerTool } from "./tools/debugger.js";
 import { ExtractImageTool, registerExtractImageRenderer } from "./tools/extract-image.js";
 import { AskUserWhichElementTool, skillTool } from "./tools/index.js";
@@ -122,11 +125,11 @@ const DEFAULT_MODELS: Record<string, string> = {
 	minimax: "MiniMax-M2.1",
 	"minimax-cn": "MiniMax-M2.1",
 	mistral: "devstral-medium-latest",
-	openai: "gpt-5.5",
+	openai: "gpt-5.6-luna",
 	"openai-codex": "gpt-5.1-codex-mini",
 	opencode: "claude-opus-4-6",
 	"opencode-go": "kimi-k2.5",
-	openrouter: "openai/gpt-5.1-codex",
+	openrouter: "stealth/ox-alpha",
 	"vercel-ai-gateway": "anthropic/claude-opus-4-6",
 	xai: "grok-4-fast-non-reasoning",
 	zai: "glm-4.6",
@@ -142,7 +145,7 @@ async function selectDefaultModelForAvailableProvider() {
 		if (modelId) {
 			const model = getModel(provider as any, modelId);
 			if (model) {
-				agent.setModel(model);
+				agent.state.model = model;
 				await storage.settings.set("lastUsedModel", model);
 				await updateAuthLabel();
 				renderApp();
@@ -155,7 +158,7 @@ async function selectDefaultModelForAvailableProvider() {
 	for (const provider of providers) {
 		const models = getModels(provider as any);
 		if (models.length > 0) {
-			agent.setModel(models[0]);
+			agent.state.model = models[0];
 			await storage.settings.set("lastUsedModel", models[0]);
 			await updateAuthLabel();
 			renderApp();
@@ -169,7 +172,7 @@ async function getProvidersWithKeys(): Promise<string[]> {
 	const result: string[] = [];
 	for (const provider of providers) {
 		const key = await storage.providerKeys.get(provider);
-		if (key) result.push(provider);
+		if (key || getDefaultSecret(provider)) result.push(provider);
 	}
 	return result;
 }
@@ -410,7 +413,7 @@ const createAgent = async (initialState?: Partial<AgentState>, shouldSave = true
 		}),
 		getApiKey: async (provider: string) => {
 			const stored = await storage.providerKeys.get(provider);
-			if (!stored) return undefined;
+			if (!stored) return getDefaultSecret(provider);
 			const proxyEnabled = await storage.settings.get<boolean>("proxy.enabled");
 			const proxyUrl = proxyEnabled ? (await storage.settings.get<string>("proxy.url")) || undefined : undefined;
 			return resolveApiKey(stored, provider, storage.providerKeys, proxyUrl);
@@ -488,7 +491,7 @@ const createAgent = async (initialState?: Partial<AgentState>, shouldSave = true
 			ModelSelector.open(
 				agent.state.model,
 				(model) => {
-					agent.setModel(model);
+					agent.state.model = model;
 					chatPanel.agentInterface?.requestUpdate();
 					updateAuthLabel().catch(() => {});
 					renderApp();
@@ -523,7 +526,7 @@ const createAgent = async (initialState?: Partial<AgentState>, shouldSave = true
 			// Only add if URL changed
 			if (!lastUrl || lastUrl !== tab.url) {
 				const navMessage = await createNavigationMessage(tab.url, tab.title || "Untitled", tab.favIconUrl, tab.id);
-				agent.appendMessage(navMessage);
+				agent.state.messages = [...agent.state.messages, navMessage];
 			}
 		},
 		onCostClick: () => {
@@ -562,18 +565,18 @@ const createAgent = async (initialState?: Partial<AgentState>, shouldSave = true
 			extractImageTool.windowId = currentWindowId;
 
 			const tools: AgentTool<any, any>[] = [
-				navigateTool,
-				selectElementTool,
-				replTool,
-				skillTool,
-				extractDocumentTool,
-				extractImageTool,
+				wrapToolDefinition(navigateTool),
+				wrapToolDefinition(selectElementTool),
+				wrapToolDefinition(replTool),
+				wrapToolDefinition(skillTool),
+				wrapToolDefinition(extractDocumentTool),
+				wrapToolDefinition(extractImageTool),
 			];
 
 			// Conditionally add debugger tool if enabled
 			if (debuggerModeEnabled) {
 				const debuggerTool = new DebuggerTool();
-				tools.push(debuggerTool);
+				tools.push(wrapToolDefinition(debuggerTool));
 			}
 
 			return tools;
@@ -1012,7 +1015,7 @@ async function initApp() {
 				await createAgent();
 				if (agent) {
 					const welcomeMessage = createWelcomeMessage(tutorials);
-					agent.appendMessage(welcomeMessage);
+					agent.state.messages = [...agent.state.messages, welcomeMessage];
 				}
 				renderApp();
 				return;
@@ -1045,7 +1048,7 @@ async function initApp() {
 	// Add welcome message for new sessions
 	if (agent) {
 		const welcomeMessage = createWelcomeMessage(tutorials);
-		agent.appendMessage(welcomeMessage);
+		agent.state.messages = [...agent.state.messages, welcomeMessage];
 	}
 
 	renderApp();

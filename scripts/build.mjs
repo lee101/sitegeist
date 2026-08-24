@@ -43,7 +43,35 @@ const buildOptions = {
 		global: "globalThis",
 	},
 	inject: [join(packageRoot, "scripts/process-shim.js")],
-	// Force all mini-lit and lit imports to resolve to sitegeist's node_modules
+	// Force pi-mono packages (and their deep subpaths) to the workspace copies so
+	// the bundle uses one shared instance instead of web-ui's nested 0.73.x deps.
+	plugins: [
+		{
+			name: "pi-mono-alias",
+			setup(build) {
+				const entries = {
+					"@mariozechner/pi-agent-core": "node_modules/@mariozechner/pi-agent-core/dist/index.js",
+					"@mariozechner/pi-tui": "node_modules/@mariozechner/pi-tui/dist/index.js",
+					"@earendil-works/pi-ai": "node_modules/@mariozechner/pi-ai/dist/index.js",
+					"@earendil-works/pi-agent-core": "node_modules/@mariozechner/pi-agent-core/dist/index.js",
+					"@earendil-works/pi-telemetry": "../pi-mono/packages/telemetry/dist/index.js",
+				};
+				const legacyShim = join(packageRoot, "src/compat/pi-ai-legacy.js");
+				build.onResolve({ filter: new RegExp(`^(${Object.keys(entries).join("|")})(/|$)`) }, (args) => {
+					if (
+						args.path === "@mariozechner/pi-ai" &&
+						/node_modules[\\/]@mariozechner[\\/]pi-web-ui\//.test(args.importer)
+					) {
+						return { path: legacyShim };
+					}
+					const key = Object.keys(entries).find((k) => args.path === k || args.path.startsWith(`${k}/`));
+					if (!key) return undefined;
+					const rest = args.path.slice(key.length);
+					return { path: join(packageRoot, entries[key], rest) };
+				});
+			},
+		},
+	],
 	alias: {
 		process: join(packageRoot, "scripts/process-shim.js"),
 		"@mariozechner/mini-lit": join(packageRoot, "node_modules/@mariozechner/mini-lit"),

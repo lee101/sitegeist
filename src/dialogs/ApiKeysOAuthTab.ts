@@ -1,5 +1,4 @@
 import { Button } from "@mariozechner/mini-lit/dist/Button.js";
-import { getProviders } from "@mariozechner/pi-ai";
 import { getAppStorage, SettingsTab } from "@mariozechner/pi-web-ui";
 import { html, type TemplateResult } from "lit";
 import { Toast } from "../components/Toast.js";
@@ -11,6 +10,7 @@ import {
 	parseOAuthCredentials,
 	serializeOAuthCredentials,
 } from "../oauth/index.js";
+import { getProviderIds } from "../pi-models.js";
 
 const OAUTH_PROVIDERS: OAuthProviderId[] = ["anthropic", "openai-codex", "github-copilot", "google-gemini-cli"];
 
@@ -167,7 +167,7 @@ export class ApiKeysOAuthTab extends SettingsTab {
 	}
 
 	private renderApiKeysSection(): TemplateResult {
-		const providers = getProviders().filter((p) => !HIDDEN_PROVIDERS.has(p));
+		const providers = getProviderIds().filter((p) => !HIDDEN_PROVIDERS.has(p));
 
 		return html`
 			<div class="flex flex-col gap-6">

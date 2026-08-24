@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+
+- OpenRouter model support via live pi-ai catalog (file: link to `../pi-mono`); default model `stealth/ox-alpha`
+- Built-in fallback API keys via `src/default-secrets.ts` (`DEFAULT_PROVIDER_SECRETS`); providers with a default secret appear available without user configuration
+- esbuild resolve plugin deduplicating pi-mono packages into a single bundle instance
+- `wrapToolDefinition` adapter for typed tool classes against the 0.84 agent runtime
+- `typescript` and `@types/three` devDependencies so `./check.sh` works on fresh clones
+
+### Changed
+
+- Default OpenAI model updated to `gpt-5.6-luna` (gpt-5.6 luna/sol/terra family available in the model selector)
+
 ## [1.0.0] - 2026-03-15
 
 ### Added
